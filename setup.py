@@ -61,7 +61,7 @@ setup(
     py_modules = ["multispline.spline"],
     classifiers = [
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: GNU General Public License (GPL)",
+        'License :: OSI Approved :: MIT License',
         "Natural Language :: English",
         "Programming Language :: C++",
         "Programming Language :: Cython",
