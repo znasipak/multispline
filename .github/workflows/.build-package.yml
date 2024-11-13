@@ -20,8 +20,8 @@ jobs:
             CIBW_BEFORE_BUILD_MACOS: |
                 brew install llvm libomp
                 export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
-                export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
-                export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
+                export LDFLAGS="-L/usr/local/opt/libomp/lib"
+                export CPPFLAGS="-I/usr/local/opt/libomp/include"
 
       - uses: actions/upload-artifact@v4
         with:
