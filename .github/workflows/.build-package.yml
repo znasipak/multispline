@@ -17,7 +17,12 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.21.3
         env:
-            CIBW_BEFORE_BUILD: ${{ startsWith(matrix.os, 'macos') && ' brew reinstall gcc; brew install llvm libomp' || ''}}
+            CIBW_BEFORE_BUILD_MACOS: |
+                brew reinstall gcc
+                brew install llvm libomp
+                export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+                export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
+                export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
 
       - uses: actions/upload-artifact@v4
         with:
