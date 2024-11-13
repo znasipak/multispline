@@ -44,6 +44,7 @@ cpu_extension = dict(
 wave_ext = Extension(
     "splinecy", 
     sources=["cython/spline_wrap.pyx", *set(full_dependence)], 
+    extra_compile_args=["-std=c++11"],
     **cpu_extension,
 )
 
