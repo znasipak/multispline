@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <algorithm>
-#include "omp.h"
 #include <chrono>
 #include <cmath>
 

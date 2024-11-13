@@ -11,19 +11,16 @@ import sys
 For some reason, the libraries extension does not support extra compiler arguments. So
 instead, we pass them directly by changing the evironment variable CFLAGS
 """
-compiler_flags = ["-std=c++11", "-fopenmp", "-march=native"]
+compiler_flags = ["-std=c++11", "-march=native"]
 libraries = []
 
 # set some flags and libraries depending on the system platform
 if sys.platform.startswith('win32'):
     compiler_flags.append('/Od')
-    libraries.append('gomp')
 elif sys.platform.startswith('darwin'):
     compiler_flags.append('-O2')
-    libraries.append('omp')
 elif sys.platform.startswith('linux'):
     compiler_flags.append('-O2')
-    libraries.append('gomp')
     
 
 CFLAGS = os.getenv("CFLAGS")
