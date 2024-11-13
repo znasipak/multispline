@@ -55,6 +55,8 @@ setup(
     author = "Zach Nasipak",
     version = "0.1.0",
     description = "Cubic splines in multiple dimensions",
+    long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
     ext_modules = cythonize(ext_modules, language_level = "3"),
     py_modules = ["multispline.spline"],
     classifiers = [
