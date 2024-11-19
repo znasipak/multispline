@@ -30,7 +30,6 @@ conda create -n spline-env -c conda-forge Cython numpy clang_osx-64 clangxx_osx-
 conda activate spline-env
 ```
 This may also work for MACOSX silicon, though alternatively one should use:
-For MACOSX Intel run:
 ```
 conda create -n spline-env -c conda-forge Cython numpy clang_osx-arm64 clangxx_osx-arm64 python=3.9
 conda activate spline-env
