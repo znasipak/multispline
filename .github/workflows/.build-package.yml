@@ -10,13 +10,13 @@ on:
 
 jobs:
   build_and_run_tests:
-      name: Build and run unit tests
-      runs-on: ${{ matrix.os }}
-      strategy:
-        matrix:
-          # macos-13 is an intel runner, macos-14 is apple silicon
-          os: [ubuntu-latest, macos-13, macos-14]
-      
+    name: Build and run unit tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # macos-13 is an intel runner, macos-14 is apple silicon
+        os: [ubuntu-latest, macos-13, macos-14]
+  
     steps:
       - uses: actions/checkout@v4
 
