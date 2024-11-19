@@ -6,38 +6,46 @@ cubic_spline_bc_dict = {
     "not-a-knot": 1,
     "clamped": 2,
     "E(3)": 3,
-    "natural-alt": 4 
+    # "natural-alt": 4 
 }
 
-class CubicSpline:
+def available_boundary_conditions():
+    """
+    Returns the available boundary conditions for cubic splines
+    
+    Returns
+    -------
+    list[str]
+    """
+    return list(cubic_spline_bc_dict.keys())
+    
+class CubicSplineUniformGrid:
     """
     A class for producing a cubic spline of a function :math:`f(x)` given its values
-    :math:`f_{i} = f(x_i)` where :math:`x_i = x_0, x_1, \\dots , x_N` is a grid of :math:`(N+1)` uniformly-spaced
-    points.
+    :math:`f_{i} = f(x_i)` where :math:`x_i = x_0 + i*dx` is a grid of :math:`(N+1)` uniformly-spaced
+    points with spacing :math:`dx`.
     
     Parameters
     ----------
-    x : 1d-array[double]
-        A uniformly-spaced grid of points
+    x : double
+        The starting point of the grid
+    dx : double
+        The spacing between grid points
     f : 1d-array[double]
-        Function values corresponding to the grid points x
+        Function values corresponding to the grid points :math:`x_i`
     bc : str (optional)
         Boundary value method. Valid options include "natural", "not-a-knot", "clamped", and "E(3)"
     """
-    def __init__(self, x, f, bc = "E(3)"):
+    def __init__(self, x0, dx, f, bc = "E(3)"):
         self.boundary_conditions_dict = cubic_spline_bc_dict
         self.available_boundary_conditions = self.boundary_conditions_dict.keys()
 
-        assert isinstance(x, np.ndarray)
         assert isinstance(f, np.ndarray)
-        assert x.shape == f.shape, "Shapes of arrays {} and {} do not match".format(x.shape, f.shape)
 
-        self.x0 = x[0]
-        self.dx = x[1] - self.x0
+        self.x0 = x0
+        self.dx = dx
         self.nx = f.shape[0] - 1
 
-        dx_array = x[1:] - x[:-1]
-        assert np.allclose(dx_array, self.dx*np.ones(dx_array.shape[0])), "Sampling points are not evenly spaced"
         self.check_boundary_conditions(bc)
         
         self.base = CyCubicSpline(self.x0, self.dx, np.ascontiguousarray(f), self.boundary_conditions_dict[bc])
@@ -86,12 +94,12 @@ class CubicSpline:
 
         Parameters
         ----------
-        x : double
+        x : double or 1d-array[double]
             dependent parameter
 
         Returns
         -------
-        double
+        double or 1d-array[double]
         """
         if isinstance(x, np.ndarray):
             return np.array([self.base.eval(xi) for xi in x])
@@ -103,13 +111,15 @@ class CubicSpline:
 
         Parameters
         ----------
-        x : double
+        x : double or 1d-array[double]
             dependent parameter
 
         Returns
         -------
-        double
+        double or 1d-array[double]
         """
+        if isinstance(x, np.ndarray):
+            return np.array([self.base.deriv(xi) for xi in x])
         return self.base.deriv(x)
     
     def deriv2(self, x):
@@ -118,13 +128,15 @@ class CubicSpline:
 
         Parameters
         ----------
-        x : double
+        x : double or 1d-array[double]
             dependent parameter
 
         Returns
         -------
-        double
+        double or 1d-array[double]
         """
+        if isinstance(x, np.ndarray):
+            return np.array([self.base.deriv2(xi) for xi in x])
         return self.base.deriv2(x)
 
     def __call__(self, x):
@@ -133,15 +145,49 @@ class CubicSpline:
 
         Parameters
         ----------
-        x : double
+        x : double or 1d-array[double]
             dependent parameter
 
         Returns
         -------
-        double
+        double or 1d-array[double]
         """
         return self.eval(x)
     
+class CubicSpline(CubicSplineUniformGrid):
+    """
+    A class for producing a cubic spline of a function :math:`f(x)` given its values
+    :math:`f_{i} = f(x_i)` where :math:`x_i = x_0, x_1, \\dots , x_N` is a grid of :math:`(N+1)` uniformly-spaced
+    points.
+    
+    Parameters
+    ----------
+    x : 1d-array[double]
+        A uniformly-spaced grid of points
+    f : 1d-array[double]
+        Function values corresponding to the grid points x
+    bc : str (optional)
+        Boundary value method. Valid options include "natural", "not-a-knot", "clamped", and "E(3)"
+    """
+    def __init__(self, x, f, bc = "E(3)"):
+        self.boundary_conditions_dict = cubic_spline_bc_dict
+        self.available_boundary_conditions = self.boundary_conditions_dict.keys()
+
+        assert isinstance(x, np.ndarray)
+        assert isinstance(f, np.ndarray)
+        assert x.shape == f.shape, "Shapes of arrays {} and {} do not match".format(x.shape, f.shape)
+
+        self.x0 = x[0]
+        self.dx = x[1] - self.x0
+        self.nx = f.shape[0] - 1
+
+        dx_array = x[1:] - x[:-1]
+        assert np.allclose(dx_array, self.dx*np.ones(dx_array.shape[0])), "Sampling points are not evenly spaced"
+        self.check_boundary_conditions(bc)
+        
+        self.base = CyCubicSpline(self.x0, self.dx, np.ascontiguousarray(f), self.boundary_conditions_dict[bc])
+    
+# Bicubic spline
 class BicubicSpline:
     """
     A class for producing a bicubic spline of a function :math:`f(x, y)` given its values
@@ -200,6 +246,19 @@ class BicubicSpline:
     def check_boundary_conditions(self, method):
         if method not in self.available_boundary_conditions:
             raise ValueError("No available method " + method)
+        
+    @property
+    def coefficients(self):
+        """
+        The 4D array of spline coefficients with dimensions :code:`(nx, ny, 4, 4)`.
+        Data are ordered so that the element at index :code:`(i, j, mx, my)`
+        returns the same value as :code:`coeffs(i, j, mx, my)`
+
+        Returns
+        -------
+        3d-array[double]
+        """
+        return np.array([[[[self.base.coefficient(i, j, mx, my) for my in range(4)] for mx in range(4)] for j in range(self.ny)] for i in range(self.nx)])
 
     def eval(self, x, y):
         """
@@ -216,6 +275,12 @@ class BicubicSpline:
         -------
         double
         """
+        ## allow for numpy broadcasting
+        if isinstance(x, np.ndarray) or isinstance(y, np.ndarray):
+            b = np.broadcast(x, y)
+            out = np.empty(b.shape)
+            out.flat = [self.base.eval(xi, yi) for (xi, yi) in b]
+            return out
         return self.base.eval(x, y)
 
     def deriv_x(self, x, y):
@@ -233,6 +298,11 @@ class BicubicSpline:
         -------
         double
         """
+        if isinstance(x, np.ndarray) or isinstance(y, np.ndarray):
+            b = np.broadcast(x, y)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_x(xi, yi) for (xi, yi) in b]
+            return out
         return self.base.deriv_x(x, y)
     
     def deriv_y(self, x, y):
@@ -250,6 +320,11 @@ class BicubicSpline:
         -------
         double
         """
+        if isinstance(x, np.ndarray) or isinstance(y, np.ndarray):
+            b = np.broadcast(x, y)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_y(xi, yi) for (xi, yi) in b]
+            return out
         return self.base.deriv_y(x, y)
     
     def deriv_xx(self, x, y):
@@ -267,6 +342,11 @@ class BicubicSpline:
         -------
         double
         """
+        if isinstance(x, np.ndarray) or isinstance(y, np.ndarray):
+            b = np.broadcast(x, y)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_xx(xi, yi) for (xi, yi) in b]
+            return out
         return self.base.deriv_xx(x, y)
     
     def deriv_yy(self, x, y):
@@ -284,6 +364,11 @@ class BicubicSpline:
         -------
         double
         """
+        if isinstance(x, np.ndarray) or isinstance(y, np.ndarray):
+            b = np.broadcast(x, y)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_yy(xi, yi) for (xi, yi) in b]
+            return out
         return self.base.deriv_yy(x, y)
     
     def deriv_xy(self, x, y):
@@ -301,6 +386,11 @@ class BicubicSpline:
         -------
         double
         """
+        if isinstance(x, np.ndarray) or isinstance(y, np.ndarray):
+            b = np.broadcast(x, y)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_xy(xi, yi) for (xi, yi) in b]
+            return out
         return self.base.deriv_xy(x, y)
     
     def coeff(self, i, j, mx, my):
@@ -329,7 +419,7 @@ class BicubicSpline:
         return self.base.coefficient(i, j, mx, my)
 
     def __call__(self, x, y):
-        return self.base.eval(x, y)
+        return self.eval(x, y)
     
 class TricubicSpline:
     """
@@ -417,6 +507,11 @@ class TricubicSpline:
         -------
         double
         """
+        if isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.eval(xi, yi, zi) for (xi, yi, zi) in b]
+            return out
         return self.base.eval(x, y, z)
 
     def deriv_x(self, x, y, z):
@@ -436,6 +531,11 @@ class TricubicSpline:
         -------
         double
         """
+        if isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_x(xi, yi, zi) for (xi, yi, zi) in b]
+            return out
         return self.base.deriv_x(x, y, z)
     
     def deriv_y(self, x, y, z):
@@ -455,6 +555,11 @@ class TricubicSpline:
         -------
         double
         """
+        if isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_y(xi, yi, zi) for (xi, yi, zi) in b]
+            return out
         return self.base.deriv_y(x, y, z)
     
     def deriv_z(self, x, y, z):
@@ -474,6 +579,11 @@ class TricubicSpline:
         -------
         double
         """
+        if isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_z(xi, yi, zi) for (xi, yi, zi) in b]
+            return out
         return self.base.deriv_z(x, y, z)
     
     def deriv_xx(self, x, y, z):
@@ -493,6 +603,11 @@ class TricubicSpline:
         -------
         double
         """
+        if isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_xx(xi, yi, zi) for (xi, yi, zi) in b]
+            return out
         return self.base.deriv_xx(x, y, z)
     
     def deriv_yy(self, x, y, z):
@@ -512,6 +627,11 @@ class TricubicSpline:
         -------
         double
         """
+        if isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_yy(xi, yi, zi) for (xi, yi, zi) in b]
+            return out
         return self.base.deriv_yy(x, y, z)
     
     def deriv_zz(self, x, y, z):
@@ -531,6 +651,11 @@ class TricubicSpline:
         -------
         double
         """
+        if isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_zz(xi, yi, zi) for (xi, yi, zi) in b]
+            return out
         return self.base.deriv_zz(x, y, z)
     
     def deriv_xy(self, x, y, z):
@@ -550,6 +675,11 @@ class TricubicSpline:
         -------
         double
         """
+        if isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_xy(xi, yi, zi) for (xi, yi, zi) in b]
+            return out
         return self.base.deriv_xy(x, y, z)
     
     def deriv_xz(self, x, y, z):
@@ -569,6 +699,11 @@ class TricubicSpline:
         -------
         double
         """
+        if isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_xz(xi, yi, zi) for (xi, yi, zi) in b]
+            return out
         return self.base.deriv_xz(x, y, z)
     
     def deriv_yz(self, x, y, z):
@@ -588,6 +723,11 @@ class TricubicSpline:
         -------
         double
         """
+        if isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_yz(xi, yi, zi) for (xi, yi, zi) in b]
+            return out
         return self.base.deriv_yz(x, y, z)
     
     def coeff(self, i, j, k, mx, my, mz):
@@ -619,6 +759,7 @@ class TricubicSpline:
         """
         return self.base.coefficient(i, j, k, mx, my, mz)
     
+    @property
     def coefficients(self):
         """
         The 3D array of spline coefficients with dimensions :code:`(nx, ny, 64*nz)`.
@@ -648,4 +789,4 @@ class TricubicSpline:
         -------
         double
         """
-        return self.base.eval(x, y, z)
+        return self.eval(x, y, z)
