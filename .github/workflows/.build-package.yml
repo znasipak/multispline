@@ -67,10 +67,10 @@ jobs:
   upload_pypi:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
-    environment: testpypi
+    environment: pypi
     permissions:
       id-token: write
-    # if: github.event_name == 'release' && github.event.action == 'published'
+    if: github.event_name == 'release' && github.event.action == 'published'
 
     steps:
       - uses: actions/download-artifact@v4
@@ -82,5 +82,5 @@ jobs:
 
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: https://test.pypi.org/legacy/
+          # repository-url: https://test.pypi.org/legacy/
           verbose: true
