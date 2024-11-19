@@ -51,6 +51,10 @@ wave_ext = Extension(
 ext_modules = [wave_ext]
 
 setup(
+    name = "multispline",
+    authors = "Zach Nasipak",
+    description = "Cubic splines in multiple dimensions",
+    version = "0.1.0",
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     ext_modules = cythonize(ext_modules, language_level = "3"),
