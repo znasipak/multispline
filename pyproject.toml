@@ -6,6 +6,11 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[project]
+dependencies = [
+    "numpy"
+]
+
 [tool.cibuildwheel]
 # Disable building PyPy wheels on all platforms
 skip = "pp*"
