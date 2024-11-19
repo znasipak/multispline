@@ -51,21 +51,10 @@ wave_ext = Extension(
 ext_modules = [wave_ext]
 
 setup(
-    name = "multispline",
-    author = "Zach Nasipak",
-    version = "0.1.0",
-    description = "Cubic splines in multiple dimensions",
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     ext_modules = cythonize(ext_modules, language_level = "3"),
     py_modules = ["multispline.spline"],
-    classifiers = [
-        "Programming Language :: Python :: 3",
-        'License :: OSI Approved :: MIT License',
-        "Natural Language :: English",
-        "Programming Language :: C++",
-        "Programming Language :: Cython",
-    ],
     cmdclass = {'build_ext': build_ext},
     zip_safe = False
 )

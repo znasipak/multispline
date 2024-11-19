@@ -7,10 +7,25 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
+name = "multispline"
+authors = [
+	{name = "Zach Nasipak"}
+]
+description = "Cubic splines in multiple dimensions"
+version = "0.1.0"
+classifiers = [
+	"Programming Language :: Python :: 3",
+	'License :: OSI Approved :: MIT License',
+	"Natural Language :: English",
+	"Programming Language :: C++",
+	"Programming Language :: Cython",
+]
 dependencies = [
     "numpy"
 ]
-
+dynamic = [
+    "readme",
+]
 [tool.cibuildwheel]
 # Disable building PyPy wheels on all platforms
 skip = "pp*"
