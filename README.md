@@ -21,7 +21,7 @@ python3 -m pip install multispline
 `multispline` relies on a few dependencies to install and run, namely
 a C/C++ compiler (e.g., `g++`), `Cython`, `numpy`, and `python >= 3.7`, though we recommend using at least Python 3.9.
 To reduce package conflicts and ensure that the proper dependencies are installed,
-we recommend using Anaconda and its virtual environments.
+we recommend using `conda` and its virtual environments, which can be obtained through the [Miniforge distribution](https://github.com/conda-forge/miniforge).
 
 Create a conda environment `spline-env` (or whatever name you would like)
 with the necessary dependencies to install `multispline`. For MACOSX Intel run:
