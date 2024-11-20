@@ -54,7 +54,7 @@ ext_modules = [wave_ext]
 
 setup(
     name = "multispline",
-    author = "Zach Nasipak",
+    authors = "Zach Nasipak",
     version = "0.1.0",
     description = "Cubic splines in multiple dimensions",
     ext_modules = cythonize(ext_modules, language_level = "3"),
