@@ -64,9 +64,7 @@ Matrix Matrix::reshaped(int n, int m) const{
 
 Matrix Matrix::transpose() const{
 	Matrix AT(_m, _n);
-	#pragma omp parallel
 	{
-		#pragma omp for collapse(2)
 			for(int i = 0; i < _n; i++){
 				for(int j = 0; j < _m; j++){
 					AT(j, i) = _A[i*_m + j];
@@ -78,16 +76,13 @@ Matrix Matrix::transpose() const{
 
 void Matrix::transposeInPlace(){
 	Vector AT(_A.size());
-	#pragma omp parallel
 	{
-		#pragma omp for collapse(2)
 		for(int i = 0; i < _n; i++){
 			for(int j = 0; j < _m; j++){
 				AT[j*_n + i] = _A[i*_m + j];
 			}
 		}
 
-		#pragma omp for
 		for(int i = 0; i < _n*_m; i++){
 			_A[i] = AT[i];
 		}
@@ -413,9 +408,7 @@ void BicubicSpline::computeSplineCoefficients(Matrix &m_z, int method){
 	// we will store the relevant cofficients close to one another in memory
 
 	// watch.start();
-	#pragma omp parallel
 	{
-		#pragma omp for collapse(2) schedule(dynamic, 16)
 			for(int i = 0; i < nx; i++){
 				for(int j = 0; j < ny; j++){
 					Matrix dmat(4, 4);

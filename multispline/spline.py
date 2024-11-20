@@ -241,6 +241,7 @@ class BicubicSpline:
         assert np.allclose(dx_array, self.dx*np.ones(dx_array.shape[0])), "Sampling points in x are not evenly spaced"
         assert np.allclose(dy_array, self.dy*np.ones(dy_array.shape[0])), "Sampling points in y are not evenly spaced"
 
+        self.check_boundary_conditions(bc)
         self.base = CyBicubicSpline(self.x0, self.dx, self.nx, self.y0, self.dy, self.ny, np.ascontiguousarray(f), self.boundary_conditions_dict[bc])
 
     def check_boundary_conditions(self, method):
@@ -484,6 +485,7 @@ class TricubicSpline:
         assert np.allclose(dy_array, self.dy*np.ones(dy_array.shape[0])), "Sampling points in y are not evenly spaced"
         assert np.allclose(dz_array, self.dz*np.ones(dz_array.shape[0])), "Sampling points in z are not evenly spaced"
 
+        self.check_boundary_conditions(bc)
         self.base = CyTricubicSpline(self.x0, self.dx, self.nx, self.y0, self.dy, self.ny, self.z0, self.dz, self.nz, np.ascontiguousarray(f), self.boundary_conditions_dict[bc])
 
     def check_boundary_conditions(self, method):
