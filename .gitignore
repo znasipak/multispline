@@ -166,3 +166,4 @@ cython/*.cpp
 
 # User-specific files
 .DS_Store
+*/.DS_Store
