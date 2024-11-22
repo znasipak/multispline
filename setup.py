@@ -54,7 +54,7 @@ setup(
     name = "multispline",
     author = "Zach Nasipak",
     description = "Cubic splines in multiple dimensions",
-    version = "0.8.0",
+    version = "0.8.2",
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     ext_modules = cythonize(ext_modules, language_level = "3"),
