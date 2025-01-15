@@ -59,6 +59,7 @@ setup(
     long_description_content_type='text/markdown',
     ext_modules = cythonize(ext_modules, language_level = "3"),
     py_modules = ["multispline.spline"],
+    include_package_data=True,
     cmdclass = {'build_ext': build_ext},
     zip_safe = False
 )
