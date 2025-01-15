@@ -1,0 +1,3 @@
+include cython/spline_wrap.pyx
+include cpp/include/spline.hpp
+include cpp/src/spline.cpp
