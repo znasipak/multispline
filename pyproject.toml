@@ -5,7 +5,7 @@ requires = [ "cython", "numpy", "scikit-build-core" ]
 
 [project]
 name = "multispline"
-version = "0.8.2"
+version = "0.8.3"
 authors = [
 	{name = "Zach Nasipak"}
 ]
