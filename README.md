@@ -408,3 +408,5 @@ Lastly, one can access spline coefficients through the class property `coefficie
 Zachary Nasipak
 
 Christian Chapman-Bird
+
+Maxime Pigou
