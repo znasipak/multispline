@@ -17,6 +17,7 @@ set(MULTISPLINE_MARCH native CACHE STRING
                                  "Value of the -march compiler option if supported by compiler")
 
 # Define the splinecy target
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/cython")
 
 add_custom_command(
     OUTPUT "cython/spline_wrap.cpp"
