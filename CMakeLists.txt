@@ -32,8 +32,14 @@ add_custom_command(
     VERBATIM
 )
 
-python_add_library(splinecy MODULE cython/spline_wrap.cpp cpp/src/spline.cpp
-                     WITH_SOABI)
+python_add_library(splinecy MODULE 
+    cython/spline_wrap.cpp 
+    cpp/src/utils.cpp
+    cpp/src/cubic.cpp
+    cpp/src/bicubic.cpp
+    cpp/src/tricubic.cpp
+    cpp/src/quadcubic.cpp
+    WITH_SOABI)
 target_include_directories(splinecy PRIVATE ${Python_NumPy_INCLUDE_DIR} "cpp/include")
 set_property(TARGET splinecy PROPERTY CXX_STANDARD 11)
 

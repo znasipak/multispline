@@ -5,50 +5,70 @@ import os
 import warnings
 from libcpp.vector cimport vector
 
-cdef extern from "spline.hpp":
+cdef extern from "utils.hpp":
     cdef cppclass Matrix:
         Matrix()
-        Matrix(int n)
-        Matrix(int n, int m)
-        Matrix(int n, int m, vector[double] A)
-        Matrix(int n, int m, double val)
+        Matrix(size_t n)
+        Matrix(size_t n, size_t m)
+        Matrix(size_t n, size_t m, vector[double] A)
+        Matrix(size_t n, size_t m, double val)
 
-        void set_value(int i, int j, double val)
-        double& operator()(int i, int j)
+        void set_value(size_t i, size_t j, double val)
+        double& operator()(size_t i, size_t j)
 
     cdef cppclass ThreeTensor:
         ThreeTensor()
-        ThreeTensor(int nx)
-        ThreeTensor(int nx, int ny, int nz)
-        ThreeTensor(int nx, int ny, int nz, double *A)
-        ThreeTensor(int nx, int ny, int nz, vector[double] A)
-        ThreeTensor(int nx, int ny, int nz, double val)
+        ThreeTensor(size_t nx)
+        ThreeTensor(size_t nx, size_t ny, size_t nz)
+        ThreeTensor(size_t nx, size_t ny, size_t nz, double *A)
+        ThreeTensor(size_t nx, size_t ny, size_t nz, vector[double] A)
+        ThreeTensor(size_t nx, size_t ny, size_t nz, double val)
 
-        int rows() const
-        int cols() const
-        int slcs() const
-        int size() const
+        size_t rows() const
+        size_t cols() const
+        size_t slcs() const
+        size_t size() const
 
-        void row_replace(int i, Matrix row)
-        void col_replace(int j, Matrix col)
-        void slc_replace(int k, Matrix slc)
+        void row_replace(size_t i, Matrix row)
+        void col_replace(size_t j, Matrix col)
+        void slc_replace(size_t k, Matrix slc)
 
-        Matrix row(int i)
-        vector[double] rowcol(int i, int j)
-        vector[double] rowslc(int i, int k)
-        Matrix col(int j)
-        vector[double] colslc(int j, int k)
-        Matrix slc(int k)
+        Matrix row(size_t i)
+        vector[double] rowcol(size_t i, size_t j)
+        vector[double] rowslc(size_t i, size_t k)
+        Matrix col(size_t j)
+        vector[double] colslc(size_t j, size_t k)
+        Matrix slc(size_t k)
 
-        void reshape(int nx, int ny, int nz)
-        ThreeTensor reshaped(int nx, int ny, int nz) const
+        void reshape(size_t nx, size_t ny, size_t nz)
+        ThreeTensor reshaped(size_t nx, size_t ny, size_t nz) const
 
-        void set_value(int i, int j, int k, double val)
+        void set_value(size_t i, size_t j, size_t k, double val)
 
-        double& operator()(int i, int j, int k)
+        double& operator()(size_t i, size_t j, size_t k)
 
         vector[double] data()
 
+    cdef cppclass FourTensor:
+        FourTensor()
+        FourTensor(size_t nw, size_t nx, size_t ny, size_t nz)
+        FourTensor(size_t nw, size_t nx, size_t ny, size_t nz, vector[double] A)
+        FourTensor(size_t nw, size_t nx, size_t ny, size_t nz, double *A)
+        FourTensor(size_t nw, size_t nx, size_t ny, size_t nz, double val)
+
+        size_t dim(size_t i) const
+        size_t size() const
+
+        void reshape(size_t nw, size_t nx, size_t ny, size_t nz)
+        FourTensor reshaped(size_t nw, size_t nx, size_t ny, size_t nz) const
+
+        void set_value(size_t i, size_t j, size_t k, size_t l, double val)
+
+        double& operator()(size_t i, size_t j, size_t k, size_t l)
+
+        vector[double] data()
+
+cdef extern from "cubic.hpp":
     cdef cppclass CubicSpline:
         CubicSpline(double x0, double dx, const vector[double] &y, int method) except +
         CubicSpline(const vector[double] &x, const vector[double] &y, int method) except +
@@ -59,6 +79,7 @@ cdef extern from "spline.hpp":
         double derivative(const double x)
         double derivative2(const double x)
 
+cdef extern from "bicubic.hpp":
     cdef cppclass BicubicSpline:
         BicubicSpline(const vector[double] &x, const vector[double] &y, const Matrix &z, int method) except +
         BicubicSpline(double x0, double dx, int nx, double y0, double dy, int ny, const Matrix &z, int method) except +
@@ -73,9 +94,10 @@ cdef extern from "spline.hpp":
         CubicSpline reduce_y(const double y)
         double getSplineCoefficient(int i, int j, int nx, int ny)
 
+cdef extern from "tricubic.hpp":
     cdef cppclass TricubicSpline:
-        # TricubicSpline(const vector[double] &x, const vector[double] &y, const vector[double] &z, ThreeTensor &f, int method) except +
         TricubicSpline(double x0, double dx, int nx, double y0, double dy, int ny, double z0, double dz, int nz, ThreeTensor &f, int method) except +
+        
         double evaluate(const double x, const double y, const double z)
         double derivative_x(const double x, const double y, const double z)
         double derivative_y(const double x, const double y, const double z)
@@ -89,6 +111,29 @@ cdef extern from "spline.hpp":
 
         double getSplineCoefficient(int i, int j, int k, int nx, int ny, int nz)
         ThreeTensor getSplineCoefficients()
+
+cdef extern from "quadcubic.hpp":
+    cdef cppclass QuadcubicSpline:
+        QuadcubicSpline(double w0, double dw, int nw, double x0, double dx, int nx, double y0, double dy, int ny, double z0, double dz, int nz, FourTensor &f, int method) except +
+        
+        double evaluate(const double w, const double x, const double y, const double z)
+        double derivative_w(const double w, const double x, const double y, const double z)
+        double derivative_x(const double w, const double x, const double y, const double z)
+        double derivative_y(const double w, const double x, const double y, const double z)
+        double derivative_z(const double w, const double x, const double y, const double z)
+        double derivative_wx(const double w, const double x, const double y, const double z)
+        double derivative_wy(const double w, const double x, const double y, const double z)
+        double derivative_wz(const double w, const double x, const double y, const double z)
+        double derivative_xy(const double w, const double x, const double y, const double z)
+        double derivative_xz(const double w, const double x, const double y, const double z)
+        double derivative_yz(const double w, const double x, const double y, const double z)
+        double derivative_ww(const double w, const double x, const double y, const double z)
+        double derivative_xx(const double w, const double x, const double y, const double z)
+        double derivative_yy(const double w, const double x, const double y, const double z)
+        double derivative_zz(const double w, const double x, const double y, const double z)
+
+        double getSplineCoefficient(int h, int i, int j, int k, int nw, int nx, int ny, int nz)
+        FourTensor getSplineCoefficients()
 
 cdef class CyCubicSpline:
     cdef CubicSpline *scpp
@@ -196,4 +241,76 @@ cdef class CyTricubicSpline:
 
     def deriv_yz(self, double x, double y, double z):
         return self.scpp.derivative_yz(x, y, z)
+
+cdef class CyQuadcubicSpline:
+    cdef QuadcubicSpline *scpp
+    cdef int nw
+    cdef int nx
+    cdef int ny
+    cdef int nz
+
+    def __init__(self, double w0, double dw, int nw, double x0, double dx, int nx, double y0, double dy, int ny, double z0, double dz, int nz, np.ndarray[ndim=4, dtype=np.float64_t, mode='c'] f, int method):
+        cdef int fnw, fnx, fny, fnz
+        fnw = f.shape[0]
+        fnx = f.shape[1]
+        fny = f.shape[2]
+        fnz = f.shape[3]
+        self.nw = nw
+        self.nx = nx
+        self.ny = ny
+        self.nz = nz
+        cdef FourTensor ftens = FourTensor(fnw, fnx, fny, fnz, &f[0,0,0,0])
+        self.scpp = new QuadcubicSpline(w0, dw, nw, x0, dx, nx, y0, dy, ny, z0, dz, nz, ftens, method)
+
+    def coefficient(self, int h, int i, int j, int k, int nw, int nx, int ny, int nz):
+        return self.scpp.getSplineCoefficient(h, i, j, k, nw, nx, ny, nz)
+    
+    def coefficients(self):
+        cdef np.ndarray[ndim=4, dtype=np.float64_t, mode='c'] chijk = np.asarray(self.scpp.getSplineCoefficients().data()).reshape(self.nw, self.nx, self.ny, 256*self.nz)
+        return chijk
+
+    def eval(self, double w, double x, double y, double z):
+        return self.scpp.evaluate(w, x, y, z)
+
+    def deriv_w(self, double w, double x, double y, double z):
+        return self.scpp.derivative_w(w, x, y, z)
+
+    def deriv_x(self, double w, double x, double y, double z):
+        return self.scpp.derivative_x(w, x, y, z)
+
+    def deriv_y(self, double w, double x, double y, double z):
+        return self.scpp.derivative_y(w, x, y, z)
+
+    def deriv_z(self, double w, double x, double y, double z):
+        return self.scpp.derivative_z(w, x, y, z)
+
+    def deriv_ww(self, double w, double x, double y, double z):
+        return self.scpp.derivative_ww(w, x, y, z)
+
+    def deriv_xx(self, double w, double x, double y, double z):
+        return self.scpp.derivative_xx(w, x, y, z)
+
+    def deriv_yy(self, double w, double x, double y, double z):
+        return self.scpp.derivative_yy(w, x, y, z)
+
+    def deriv_zz(self, double w, double x, double y, double z):
+        return self.scpp.derivative_zz(w, x, y, z)
+
+    def deriv_wx(self, double w, double x, double y, double z):
+        return self.scpp.derivative_wx(w, x, y, z)
+
+    def deriv_wy(self, double w, double x, double y, double z):
+        return self.scpp.derivative_wy(w, x, y, z)
+
+    def deriv_wz(self, double w, double x, double y, double z):
+        return self.scpp.derivative_wz(w, x, y, z)
+
+    def deriv_xy(self, double w, double x, double y, double z):
+        return self.scpp.derivative_xy(w, x, y, z)
+
+    def deriv_xz(self, double w, double x, double y, double z):
+        return self.scpp.derivative_xz(w, x, y, z)
+
+    def deriv_yz(self, double w, double x, double y, double z):
+        return self.scpp.derivative_yz(w, x, y, z)
 
