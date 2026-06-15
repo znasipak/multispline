@@ -161,6 +161,31 @@ class CubicSplineUniformGrid:
         c = np.ascontiguousarray(self.coefficients, dtype=np.float64)
         return CubicSplineNumba(c, float(self.x0), float(self.dx), int(self.nx))
 
+    def to_jax(self):
+        """
+        Returns a JAX pytree view of this spline that can be evaluated and
+        differentiated inside ``jax.jit``/``jax.vmap``/``jax.grad``.
+
+        The returned object exposes ``eval``, ``deriv`` and ``deriv2`` methods;
+        derivatives are computed by automatic differentiation of the value kernel.
+        The spline coefficients are computed once here (by the C++ backend); only
+        the evaluation runs under JAX.
+
+        Returns
+        -------
+        multispline.jax.CubicSplineJax
+
+        Notes
+        -----
+        Requires the optional ``jax`` dependency (``pip install multispline[jax]``)
+        and 64-bit mode (``jax.config.update("jax_enable_x64", True)``) for results
+        that match the C++ backend to double precision.
+        """
+        from . import jax as _msjax
+        _msjax._warn_if_no_x64()
+        c = _msjax.jnp.asarray(self.coefficients)
+        return _msjax.CubicSplineJax(c, _msjax.jnp.asarray(self.x0), _msjax.jnp.asarray(self.dx))
+
     def __call__(self, x):
         """
         Evaluates the spline at the point x
@@ -463,6 +488,33 @@ class BicubicSpline:
         c = np.ascontiguousarray(self.coefficients, dtype=np.float64)
         return BicubicSplineNumba(c, float(self.x0), float(self.dx), int(self.nx),
                                   float(self.y0), float(self.dy), int(self.ny))
+
+    def to_jax(self):
+        """
+        Returns a JAX pytree view of this spline that can be evaluated and
+        differentiated inside ``jax.jit``/``jax.vmap``/``jax.grad``.
+
+        The returned object exposes ``eval`` and the ``deriv_*`` methods;
+        derivatives are computed by automatic differentiation of the value kernel.
+        The spline coefficients are computed once here (by the C++ backend); only
+        the evaluation runs under JAX.
+
+        Returns
+        -------
+        multispline.jax.BicubicSplineJax
+
+        Notes
+        -----
+        Requires the optional ``jax`` dependency (``pip install multispline[jax]``)
+        and 64-bit mode (``jax.config.update("jax_enable_x64", True)``) for results
+        that match the C++ backend to double precision.
+        """
+        from . import jax as _msjax
+        _msjax._warn_if_no_x64()
+        c = _msjax.jnp.asarray(self.coefficients)
+        return _msjax.BicubicSplineJax(
+            c, _msjax.jnp.asarray(self.x0), _msjax.jnp.asarray(self.dx),
+            _msjax.jnp.asarray(self.y0), _msjax.jnp.asarray(self.dy))
 
     def __call__(self, x, y):
         return self.eval(x, y)
@@ -844,6 +896,35 @@ class TricubicSpline:
         return TricubicSplineNumba(c, float(self.x0), float(self.dx), int(self.nx),
                                    float(self.y0), float(self.dy), int(self.ny),
                                    float(self.z0), float(self.dz), int(self.nz))
+
+    def to_jax(self):
+        """
+        Returns a JAX pytree view of this spline that can be evaluated and
+        differentiated inside ``jax.jit``/``jax.vmap``/``jax.grad``.
+
+        The returned object exposes ``eval`` and the ``deriv_*`` methods;
+        derivatives are computed by automatic differentiation of the value kernel.
+        The spline coefficients are computed once here (by the C++ backend); only
+        the evaluation runs under JAX.
+
+        Returns
+        -------
+        multispline.jax.TricubicSplineJax
+
+        Notes
+        -----
+        Requires the optional ``jax`` dependency (``pip install multispline[jax]``)
+        and 64-bit mode (``jax.config.update("jax_enable_x64", True)``) for results
+        that match the C++ backend to double precision.
+        """
+        from . import jax as _msjax
+        _msjax._warn_if_no_x64()
+        c = _msjax.jnp.asarray(self.coefficients).reshape(
+            self.nx, self.ny, self.nz, 4, 4, 4)
+        return _msjax.TricubicSplineJax(
+            c, _msjax.jnp.asarray(self.x0), _msjax.jnp.asarray(self.dx),
+            _msjax.jnp.asarray(self.y0), _msjax.jnp.asarray(self.dy),
+            _msjax.jnp.asarray(self.z0), _msjax.jnp.asarray(self.dz))
 
     def __call__(self, x, y, z):
         """
@@ -1392,6 +1473,36 @@ class QuadcubicSpline:
                                     float(self.x0), float(self.dx), int(self.nx),
                                     float(self.y0), float(self.dy), int(self.ny),
                                     float(self.z0), float(self.dz), int(self.nz))
+
+    def to_jax(self):
+        """
+        Returns a JAX pytree view of this spline that can be evaluated and
+        differentiated inside ``jax.jit``/``jax.vmap``/``jax.grad``.
+
+        The returned object exposes ``eval`` and the ``deriv_*`` methods (including
+        the w-direction derivatives); derivatives are computed by automatic
+        differentiation of the value kernel. The spline coefficients are computed
+        once here (by the C++ backend); only the evaluation runs under JAX.
+
+        Returns
+        -------
+        multispline.jax.QuadcubicSplineJax
+
+        Notes
+        -----
+        Requires the optional ``jax`` dependency (``pip install multispline[jax]``)
+        and 64-bit mode (``jax.config.update("jax_enable_x64", True)``) for results
+        that match the C++ backend to double precision.
+        """
+        from . import jax as _msjax
+        _msjax._warn_if_no_x64()
+        c = _msjax.jnp.asarray(self.coefficients).reshape(
+            self.nw, self.nx, self.ny, self.nz, 4, 4, 4, 4)
+        return _msjax.QuadcubicSplineJax(
+            c, _msjax.jnp.asarray(self.w0), _msjax.jnp.asarray(self.dw),
+            _msjax.jnp.asarray(self.x0), _msjax.jnp.asarray(self.dx),
+            _msjax.jnp.asarray(self.y0), _msjax.jnp.asarray(self.dy),
+            _msjax.jnp.asarray(self.z0), _msjax.jnp.asarray(self.dz))
 
     def __call__(self, w, x, y, z):
         """

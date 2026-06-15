@@ -446,6 +446,52 @@ Lower-level stand-alone `@njit` kernels (`cubic_eval_d`, `bicubic_eval_d`,
 
 Numba is an optional dependency; install it with `pip install multispline[numba]`.
 
+# Using splines inside JAX
+
+Every spline class also provides a `to_jax()` method that returns a JAX pytree view
+of the spline. Its `eval` and `deriv_*` methods can be `jit`-compiled, `vmap`-ed
+over batches of points, and composed into larger differentiable computations. The
+derivative methods are obtained by **automatic differentiation** of the value
+kernel, so they reproduce the analytic derivatives exactly.
+
+Because spline coefficients are double precision, enable JAX's 64-bit mode *before*
+any JAX computation runs:
+
+```python
+import jax
+jax.config.update("jax_enable_x64", True)
+
+import numpy as np
+import jax.numpy as jnp
+from multispline.spline import TricubicSpline
+
+x = np.linspace(0, 1, 21)
+y = np.linspace(0, 1, 21)
+z = np.linspace(0, 1, 21)
+f = np.einsum("i,j,k->ijk", np.sin(x), np.cos(y), np.exp(z))
+
+spline = TricubicSpline(x, y, z, f)
+jspline = spline.to_jax()                      # build once
+
+jspline.eval(0.3, 0.4, 0.5)                    # scalar evaluation
+jspline.deriv_x(0.3, 0.4, 0.5)                 # analytic derivative (via autodiff)
+
+# vectorize over many points
+xs, ys, zs = np.random.rand(3, 1000)
+jax.vmap(jspline.eval)(xs, ys, zs)
+
+# differentiate through the spline w.r.t. the evaluation point
+jax.grad(jspline.eval, argnums=0)(0.3, 0.4, 0.5)   # == jspline.deriv_x(...)
+```
+
+JAX is best suited to batched evaluation (via `vmap`) and to splines embedded in a
+larger differentiable/accelerated computation; for fast scalar CPU loops prefer the
+Numba interface above. Note that `to_jax()` differentiates with respect to the
+*evaluation point*, not the sampled data values (the coefficient fit runs in C++ and
+is not traced by JAX).
+
+JAX is an optional dependency; install it with `pip install multispline[jax]`.
+
 # Contributing
 Zachary Nasipak
 

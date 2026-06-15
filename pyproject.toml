@@ -27,6 +27,9 @@ dependencies = [
 numba = [
   "numba"
 ]
+jax = [
+  "jax"
+]
 test = [
   "pytest",
   "pytest-cov"
