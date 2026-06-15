@@ -23,6 +23,21 @@ dependencies = [
     "numpy"
 ]
 
+[project.optional-dependencies]
+numba = [
+  "numba"
+]
+test = [
+  "pytest",
+  "pytest-cov"
+]
+dev = [
+  "matplotlib",
+  "jupyter",
+  "ipython",
+  "ipykernel"
+]
+
 [tool.cibuildwheel]
 # Disable building PyPy wheels on all platforms
 skip = "pp*"

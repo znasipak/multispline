@@ -231,7 +231,7 @@ cdef class CyTricubicSpline:
         return self.scpp.derivative_yy(x, y, z)
 
     def deriv_zz(self, double x, double y, double z):
-        return self.scpp.derivative_yy(x, y, z)
+        return self.scpp.derivative_zz(x, y, z)
 
     def deriv_xy(self, double x, double y, double z):
         return self.scpp.derivative_xy(x, y, z)

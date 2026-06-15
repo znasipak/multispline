@@ -139,6 +139,28 @@ class CubicSplineUniformGrid:
             return np.array([self.base.deriv2(xi) for xi in x])
         return self.base.deriv2(x)
 
+    def to_numba(self):
+        """
+        Returns a numba ``jitclass`` view of this spline that can be constructed
+        and evaluated from within ``@njit``-compiled functions.
+
+        The returned object exposes ``eval``, ``deriv`` and ``deriv2`` methods
+        matching this class. The spline coefficients are computed once here (by
+        the C++ backend); only the evaluation runs under numba.
+
+        Returns
+        -------
+        multispline.numba.CubicSplineNumba
+
+        Notes
+        -----
+        Requires the optional ``numba`` dependency
+        (``pip install multispline[numba]``).
+        """
+        from .numba import CubicSplineNumba
+        c = np.ascontiguousarray(self.coefficients, dtype=np.float64)
+        return CubicSplineNumba(c, float(self.x0), float(self.dx), int(self.nx))
+
     def __call__(self, x):
         """
         Evaluates the spline at the point x
@@ -153,7 +175,7 @@ class CubicSplineUniformGrid:
         double or 1d-array[double]
         """
         return self.eval(x)
-    
+
 class CubicSpline(CubicSplineUniformGrid):
     """
     A class for producing a cubic spline of a function :math:`f(x)` given its values
@@ -419,9 +441,32 @@ class BicubicSpline:
         """
         return self.base.coefficient(i, j, mx, my)
 
+    def to_numba(self):
+        """
+        Returns a numba ``jitclass`` view of this spline that can be constructed
+        and evaluated from within ``@njit``-compiled functions.
+
+        The returned object exposes ``eval`` and the ``deriv_*`` methods matching
+        this class. The spline coefficients are computed once here (by the C++
+        backend); only the evaluation runs under numba.
+
+        Returns
+        -------
+        multispline.numba.BicubicSplineNumba
+
+        Notes
+        -----
+        Requires the optional ``numba`` dependency
+        (``pip install multispline[numba]``).
+        """
+        from .numba import BicubicSplineNumba
+        c = np.ascontiguousarray(self.coefficients, dtype=np.float64)
+        return BicubicSplineNumba(c, float(self.x0), float(self.dx), int(self.nx),
+                                  float(self.y0), float(self.dy), int(self.ny))
+
     def __call__(self, x, y):
         return self.eval(x, y)
-    
+
 class TricubicSpline:
     """
     A class for producing a tricubic spline of a function :math:`f(x, y, z)` given its values
@@ -775,6 +820,31 @@ class TricubicSpline:
         """
         return self.base.coefficients()
 
+    def to_numba(self):
+        """
+        Returns a numba ``jitclass`` view of this spline that can be constructed
+        and evaluated from within ``@njit``-compiled functions.
+
+        The returned object exposes ``eval`` and the ``deriv_*`` methods matching
+        this class. The spline coefficients are computed once here (by the C++
+        backend); only the evaluation runs under numba.
+
+        Returns
+        -------
+        multispline.numba.TricubicSplineNumba
+
+        Notes
+        -----
+        Requires the optional ``numba`` dependency
+        (``pip install multispline[numba]``).
+        """
+        from .numba import TricubicSplineNumba
+        c = np.ascontiguousarray(self.coefficients, dtype=np.float64).reshape(
+            self.nx, self.ny, self.nz, 4, 4, 4)
+        return TricubicSplineNumba(c, float(self.x0), float(self.dx), int(self.nx),
+                                   float(self.y0), float(self.dy), int(self.ny),
+                                   float(self.z0), float(self.dz), int(self.nz))
+
     def __call__(self, x, y, z):
         """
         Evaluates the spline at the point (x, y, z)
@@ -887,6 +957,32 @@ class QuadcubicSpline:
             return out
         return self.base.eval(w, x, y, z)
 
+    def deriv_w(self, w, x, y, z):
+        """
+        Evaluates the partial derivative of the spline with respect to w at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_w(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_w(w, x, y, z)
+
     def deriv_x(self, w, x, y, z):
         """
         Evaluates the partial derivative of the spline with respect to x at the point (w, x, y, z)
@@ -964,7 +1060,33 @@ class QuadcubicSpline:
             out.flat = [self.base.deriv_z(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
             return out
         return self.base.deriv_z(w, x, y, z)
-    
+
+    def deriv_ww(self, w, x, y, z):
+        """
+        Evaluates the second partial derivative of the spline with respect to w at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_ww(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_ww(w, x, y, z)
+
     def deriv_xx(self, w, x, y, z):
         """
         Evaluates the second partial derivative of the spline with respect to x at the point (w, x, y, z)
@@ -1042,7 +1164,85 @@ class QuadcubicSpline:
             out.flat = [self.base.deriv_zz(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
             return out
         return self.base.deriv_zz(w, x, y, z)
-    
+
+    def deriv_wx(self, w, x, y, z):
+        """
+        Evaluates the mixed partial derivative of the spline with respect to w and x at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_wx(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_wx(w, x, y, z)
+
+    def deriv_wy(self, w, x, y, z):
+        """
+        Evaluates the mixed partial derivative of the spline with respect to w and y at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_wy(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_wy(w, x, y, z)
+
+    def deriv_wz(self, w, x, y, z):
+        """
+        Evaluates the mixed partial derivative of the spline with respect to w and z at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_wz(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_wz(w, x, y, z)
+
     def deriv_xy(self, w, x, y, z):
         """
         Evaluates the mixed partial derivative of the spline with respect to x and y at the point (w, x, y, z)
@@ -1166,6 +1366,32 @@ class QuadcubicSpline:
         4d-array[double]
         """
         return self.base.coefficients()
+
+    def to_numba(self):
+        """
+        Returns a numba ``jitclass`` view of this spline that can be constructed
+        and evaluated from within ``@njit``-compiled functions.
+
+        The returned object exposes ``eval`` and the ``deriv_*`` methods matching
+        this class. The spline coefficients are computed once here (by the C++
+        backend); only the evaluation runs under numba.
+
+        Returns
+        -------
+        multispline.numba.QuadcubicSplineNumba
+
+        Notes
+        -----
+        Requires the optional ``numba`` dependency
+        (``pip install multispline[numba]``).
+        """
+        from .numba import QuadcubicSplineNumba
+        c = np.ascontiguousarray(self.coefficients, dtype=np.float64).reshape(
+            self.nw, self.nx, self.ny, self.nz, 4, 4, 4, 4)
+        return QuadcubicSplineNumba(c, float(self.w0), float(self.dw), int(self.nw),
+                                    float(self.x0), float(self.dx), int(self.nx),
+                                    float(self.y0), float(self.dy), int(self.ny),
+                                    float(self.z0), float(self.dz), int(self.nz))
 
     def __call__(self, w, x, y, z):
         """
