@@ -144,6 +144,9 @@ cdef class CyCubicSpline:
             fvec[i] = f[i]
         self.scpp = new CubicSpline(x0, dx, fvec, method)
 
+    def __dealloc__(self):
+        del self.scpp
+
     def coefficient(self, int i, int j):
         return self.scpp.getSplineCoefficient(i, j)
 
@@ -166,6 +169,9 @@ cdef class CyBicubicSpline:
             for j in range(ny + 1):
                 mz.set_value(i, j, f[i, j])
         self.scpp = new BicubicSpline(x0, dx, nx, y0, dy, ny, mz, method)
+
+    def __dealloc__(self):
+        del self.scpp
 
     def coefficient(self, int i, int j, int nx, int ny):
         return self.scpp.getSplineCoefficient(i, j, nx, ny)
@@ -204,6 +210,9 @@ cdef class CyTricubicSpline:
         self.nz = nz
         cdef ThreeTensor ftens = ThreeTensor(fnx, fny, fnz, &f[0,0,0])
         self.scpp = new TricubicSpline(x0, dx, nx, y0, dy, ny, z0, dz, nz, ftens, method)
+
+    def __dealloc__(self):
+        del self.scpp
 
     def coefficient(self, int i, int j, int k, int nx, int ny, int nz):
         return self.scpp.getSplineCoefficient(i, j, k, nx, ny, nz)
