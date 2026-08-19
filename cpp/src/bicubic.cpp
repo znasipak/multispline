@@ -25,7 +25,7 @@ BicubicSpline::BicubicSpline(double x0, double dx, int nx, double y0, double dy,
 	}
 }
 
-BicubicSpline::BicubicSpline(const Vector &x, const Vector &y, const Vector &z, int method): BicubicSpline(x[0], x[1] - x[0], x.size() - 1, y[0], y[1] - y[0], y.size() - 1, z) {}
+BicubicSpline::BicubicSpline(const Vector &x, const Vector &y, const Vector &z, int method): BicubicSpline(x[0], x[1] - x[0], x.size() - 1, y[0], y[1] - y[0], y.size() - 1, z, method) {}
 BicubicSpline::BicubicSpline(double x0, double dx, int nx, double y0, double dy, int ny, const Vector &z_vec, int method): dx(dx), dy(dy), nx(nx), ny(ny), x0(x0), y0(y0), cij(nx, 16*ny) {
 	Matrix z(nx+1, ny+1, z_vec);
 	if(nx + 1 != z.rows() && ny + 1 != z.cols()){

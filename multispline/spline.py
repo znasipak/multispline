@@ -897,7 +897,7 @@ class QuadcubicSpline:
         assert isinstance(y, np.ndarray)
         assert isinstance(z, np.ndarray)
         assert isinstance(f, np.ndarray)
-        assert ((w.shape[0], x.shape[0], y.shape[0], z.shape[0]) == (f.shape[0], f.shape[1], f.shape[2], f.shape[3]) or (w.shape[0] - 1, x.shape[0] - 1, y.shape[0] - 1, 64*(z.shape[0] - 1)) == (f.shape[0], f.shape[1], f.shape[2], f.shape[3])), "Shapes of arrays {}, {}, {}, {}, and {} do not match".format(w.shape, x.shape, y.shape, z.shape, f.shape)
+        assert ((w.shape[0], x.shape[0], y.shape[0], z.shape[0]) == (f.shape[0], f.shape[1], f.shape[2], f.shape[3]) or (w.shape[0] - 1, x.shape[0] - 1, y.shape[0] - 1, 256*(z.shape[0] - 1)) == (f.shape[0], f.shape[1], f.shape[2], f.shape[3])), "Shapes of arrays {}, {}, {}, {}, and {} do not match".format(w.shape, x.shape, y.shape, z.shape, f.shape)
 
         self.w0 = w[0]
         self.x0 = x[0]
@@ -1357,7 +1357,7 @@ class QuadcubicSpline:
     @property
     def coefficients(self):
         """
-        The 3D array of spline coefficients with dimensions :code:`(nw, nx, ny, 256*nz)`.
+        The 4D array of spline coefficients with dimensions :code:`(nw, nx, ny, 256*nz)`.
         Data are ordered so that the element at index :code:`(i, j, k, 4*(4*(4*(4*k + mw) + mx) + my) + mz)`
         returns the same value as :code:`coeffs(h, i, j, k, mw, mx, my, mz)`
 

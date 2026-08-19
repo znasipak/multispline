@@ -186,7 +186,7 @@ void QuadcubicSpline::computeSplineCoefficients(FourTensor &f, int method){
 					for(int hy = 0; hy < 4; hy++){
 						for(int hz = 0; hz < 4; hz++){
 							fw = cijs[4*(4*hx + hy) + hz].slice_wxy(i, j, k);
-							CubicSpline spl(w0, dw, nw, fw);
+							CubicSpline spl(w0, dw, nw, fw, method);
 							for(int h = 0; h < nw; h++){
 								for(int hw = 0; hw < 4; hw++){
 									setSplineCoefficient(h, i, j, k, hw, hx, hy, hz, spl.getSplineCoefficient(h, hw));

@@ -132,7 +132,7 @@ void TricubicSpline::computeSplineCoefficients(ThreeTensor &f, int method){
 			for(int iy = 0; iy < 4; iy++){
 				for(int iz = 0; iz < 4; iz++){
 					fx = cijs[4*iy + iz].rowcol(j, k);
-					CubicSpline spl(x0, dx, nx, fx);
+					CubicSpline spl(x0, dx, nx, fx, method);
 					for(int i = 0; i < nx; i++){
 						for(int ix = 0; ix < 4; ix++){
 							setSplineCoefficient(i, j, k, ix, iy, iz, spl.getSplineCoefficient(i, ix));
