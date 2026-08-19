@@ -78,7 +78,7 @@ class CubicSplineUniformGrid:
         Parameters
         ----------
         i : int
-            Coefficient for the domain :math:`x_i \leq x \leq x_{i+1}`
+            Coefficient for the domain :math:`x_i \\leq x \\leq x_{i+1}`
         mx : int
             Coefficient weighting :math:`(x-x_i)^{m_x}` in the spline series
     
@@ -427,9 +427,9 @@ class BicubicSpline:
         Parameters
         ----------
         i : int
-            Coefficient for the domain :math:`x_i \leq x \leq x_{i+1}`
+            Coefficient for the domain :math:`x_i \\leq x \\leq x_{i+1}`
         j : int
-            Coefficient for the domain :math:`y_j \leq y \leq y_{j+1}`
+            Coefficient for the domain :math:`y_j \\leq y \\leq y_{j+1}`
         mx : int
             Coefficient weighting :math:`(x-x_i)^{m_x}` in the spline series
         my : int
@@ -789,11 +789,11 @@ class TricubicSpline:
         Parameters
         ----------
         i : int
-            Coefficient for the domain :math:`x_i \leq x \leq x_{i+1}`
+            Coefficient for the domain :math:`x_i \\leq x \\leq x_{i+1}`
         j : int
-            Coefficient for the domain :math:`y_j \leq y \leq y_{j+1}`
+            Coefficient for the domain :math:`y_j \\leq y \\leq y_{j+1}`
         k : int
-            Coefficient for the domain :math:`z_k \leq z \leq z_{k+1}`
+            Coefficient for the domain :math:`z_k \\leq z \\leq z_{k+1}`
         mx : int
             Coefficient weighting :math:`(x-x_i)^{m_x}` in the spline series
         my : int
@@ -1332,13 +1332,13 @@ class QuadcubicSpline:
         Parameters
         ----------
         h : int
-            Coefficient for the domain :math:`w_h \leq w \leq w_{h+1}`
+            Coefficient for the domain :math:`w_h \\leq w \\leq w_{h+1}`
         i : int
-            Coefficient for the domain :math:`x_i \leq x \leq x_{i+1}`
+            Coefficient for the domain :math:`x_i \\leq x \\leq x_{i+1}`
         j : int
-            Coefficient for the domain :math:`y_j \leq y \leq y_{j+1}`
+            Coefficient for the domain :math:`y_j \\leq y \\leq y_{j+1}`
         k : int
-            Coefficient for the domain :math:`z_k \leq z \leq z_{k+1}`
+            Coefficient for the domain :math:`z_k \\leq z \\leq z_{k+1}`
         mw : int
             Coefficient weighting :math:`(w-w_h)^{m_w}` in the spline series
         mx : int
