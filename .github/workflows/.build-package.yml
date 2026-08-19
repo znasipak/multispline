@@ -40,10 +40,10 @@ jobs:
           - os: macos-14
           - os: ubuntu-latest
             cibw_archs: x86_64
-            cibw_skip: "pp*"
+            cibw_skip: "pp* cp315-*"
           - os: ubuntu-latest
             cibw_archs: aarch64
-            cibw_skip: "pp* *musllinux*"
+            cibw_skip: "pp* *musllinux* cp315-*"
 
     steps:
       - uses: actions/checkout@v5
@@ -56,14 +56,14 @@ jobs:
 
       - name: Build wheels (Linux ${{ matrix.cibw_archs }})
         if: runner.os == 'Linux'
-        uses: pypa/cibuildwheel@v2.22.0
+        uses: pypa/cibuildwheel@v4.2.0
         env:
           CIBW_ARCHS_LINUX: ${{ matrix.cibw_archs }}
           CIBW_SKIP: ${{ matrix.cibw_skip }}
       
       - name: Build wheels (macOS)
         if: runner.os == 'macOS'
-        uses: pypa/cibuildwheel@v2.22.0
+        uses: pypa/cibuildwheel@v4.2.0
         env:
           CIBW_ARCHS_MACOS: x86_64 universal2 arm64
 
