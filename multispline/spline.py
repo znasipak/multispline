@@ -1,4 +1,4 @@
-from splinecy import CyCubicSpline, CyBicubicSpline, CyTricubicSpline
+from splinecy import CyCubicSpline, CyBicubicSpline, CyTricubicSpline, CyQuadcubicSpline
 import numpy as np
 
 cubic_spline_bc_dict = {
@@ -78,7 +78,7 @@ class CubicSplineUniformGrid:
         Parameters
         ----------
         i : int
-            Coefficient for the domain :math:`x_i \leq x \leq x_{i+1}`
+            Coefficient for the domain :math:`x_i \\leq x \\leq x_{i+1}`
         mx : int
             Coefficient weighting :math:`(x-x_i)^{m_x}` in the spline series
     
@@ -139,6 +139,28 @@ class CubicSplineUniformGrid:
             return np.array([self.base.deriv2(xi) for xi in x])
         return self.base.deriv2(x)
 
+    def to_numba(self):
+        """
+        Returns a numba ``jitclass`` view of this spline that can be constructed
+        and evaluated from within ``@njit``-compiled functions.
+
+        The returned object exposes ``eval``, ``deriv`` and ``deriv2`` methods
+        matching this class. The spline coefficients are computed once here (by
+        the C++ backend); only the evaluation runs under numba.
+
+        Returns
+        -------
+        multispline.numba.CubicSplineNumba
+
+        Notes
+        -----
+        Requires the optional ``numba`` dependency
+        (``pip install multispline[numba]``).
+        """
+        from .numba import CubicSplineNumba
+        c = np.ascontiguousarray(self.coefficients, dtype=np.float64)
+        return CubicSplineNumba(c, float(self.x0), float(self.dx), int(self.nx))
+
     def __call__(self, x):
         """
         Evaluates the spline at the point x
@@ -153,7 +175,7 @@ class CubicSplineUniformGrid:
         double or 1d-array[double]
         """
         return self.eval(x)
-    
+
 class CubicSpline(CubicSplineUniformGrid):
     """
     A class for producing a cubic spline of a function :math:`f(x)` given its values
@@ -405,9 +427,9 @@ class BicubicSpline:
         Parameters
         ----------
         i : int
-            Coefficient for the domain :math:`x_i \leq x \leq x_{i+1}`
+            Coefficient for the domain :math:`x_i \\leq x \\leq x_{i+1}`
         j : int
-            Coefficient for the domain :math:`y_j \leq y \leq y_{j+1}`
+            Coefficient for the domain :math:`y_j \\leq y \\leq y_{j+1}`
         mx : int
             Coefficient weighting :math:`(x-x_i)^{m_x}` in the spline series
         my : int
@@ -419,12 +441,35 @@ class BicubicSpline:
         """
         return self.base.coefficient(i, j, mx, my)
 
+    def to_numba(self):
+        """
+        Returns a numba ``jitclass`` view of this spline that can be constructed
+        and evaluated from within ``@njit``-compiled functions.
+
+        The returned object exposes ``eval`` and the ``deriv_*`` methods matching
+        this class. The spline coefficients are computed once here (by the C++
+        backend); only the evaluation runs under numba.
+
+        Returns
+        -------
+        multispline.numba.BicubicSplineNumba
+
+        Notes
+        -----
+        Requires the optional ``numba`` dependency
+        (``pip install multispline[numba]``).
+        """
+        from .numba import BicubicSplineNumba
+        c = np.ascontiguousarray(self.coefficients, dtype=np.float64)
+        return BicubicSplineNumba(c, float(self.x0), float(self.dx), int(self.nx),
+                                  float(self.y0), float(self.dy), int(self.ny))
+
     def __call__(self, x, y):
         return self.eval(x, y)
-    
+
 class TricubicSpline:
     """
-    A class for producing a bicubic spline of a function :math:`f(x, y, z)` given its values
+    A class for producing a tricubic spline of a function :math:`f(x, y, z)` given its values
     :math:`f_{ijk} = f(x_i, y_j, z_k)` where :math:`x_i = x_0, x_1, \\dots , x_N` is a grid of :math:`(N+1)` uniformly-spaced
     points, :math:`y_j = y_0, y_1, \\dots , y_M` is a grid of :math:`(M+1)` uniformly-spaced
     points, and :math:`z_k = z_0, z_1, \\dots , z_O` is a grid of :math:`(O+1)` uniformly-spaced
@@ -464,6 +509,7 @@ class TricubicSpline:
         self.available_boundary_conditions = self.boundary_conditions_dict.keys()
         assert isinstance(x, np.ndarray)
         assert isinstance(y, np.ndarray)
+        assert isinstance(z, np.ndarray)
         assert isinstance(f, np.ndarray)
         assert ((x.shape[0], y.shape[0], z.shape[0]) == (f.shape[0], f.shape[1], f.shape[2]) or (x.shape[0] - 1, y.shape[0] - 1, 64*(z.shape[0] - 1)) == (f.shape[0], f.shape[1], f.shape[2])), "Shapes of arrays {}, {}, {}, and {} do not match".format(x.shape, y.shape, z.shape, f.shape)
 
@@ -743,11 +789,11 @@ class TricubicSpline:
         Parameters
         ----------
         i : int
-            Coefficient for the domain :math:`x_i \leq x \leq x_{i+1}`
+            Coefficient for the domain :math:`x_i \\leq x \\leq x_{i+1}`
         j : int
-            Coefficient for the domain :math:`y_j \leq y \leq y_{j+1}`
+            Coefficient for the domain :math:`y_j \\leq y \\leq y_{j+1}`
         k : int
-            Coefficient for the domain :math:`z_k \leq z \leq z_{k+1}`
+            Coefficient for the domain :math:`z_k \\leq z \\leq z_{k+1}`
         mx : int
             Coefficient weighting :math:`(x-x_i)^{m_x}` in the spline series
         my : int
@@ -774,6 +820,31 @@ class TricubicSpline:
         """
         return self.base.coefficients()
 
+    def to_numba(self):
+        """
+        Returns a numba ``jitclass`` view of this spline that can be constructed
+        and evaluated from within ``@njit``-compiled functions.
+
+        The returned object exposes ``eval`` and the ``deriv_*`` methods matching
+        this class. The spline coefficients are computed once here (by the C++
+        backend); only the evaluation runs under numba.
+
+        Returns
+        -------
+        multispline.numba.TricubicSplineNumba
+
+        Notes
+        -----
+        Requires the optional ``numba`` dependency
+        (``pip install multispline[numba]``).
+        """
+        from .numba import TricubicSplineNumba
+        c = np.ascontiguousarray(self.coefficients, dtype=np.float64).reshape(
+            self.nx, self.ny, self.nz, 4, 4, 4)
+        return TricubicSplineNumba(c, float(self.x0), float(self.dx), int(self.nx),
+                                   float(self.y0), float(self.dy), int(self.ny),
+                                   float(self.z0), float(self.dz), int(self.nz))
+
     def __call__(self, x, y, z):
         """
         Evaluates the spline at the point (x, y, z)
@@ -792,3 +863,553 @@ class TricubicSpline:
         double
         """
         return self.eval(x, y, z)
+
+
+class QuadcubicSpline:
+    """
+    A class for producing a quadcubic spline of a function :math:`f(w, x, y, z)` given its values
+    :math:`f_{hijk} = f(w_h, x_i, y_j, z_k)` where :math:`w_h = w_0, w_1, \\dots , w_L` is a grid of :math:`(L+1)` uniformly-spaced
+    points, :math:`x_i = x_0, x_1, \\dots , x_M` is a grid of :math:`(M+1)` uniformly-spaced
+    points, :math:`y_j = y_0, y_1, \\dots , y_N` is a grid of :math:`(N+1)` uniformly-spaced
+    points, and :math:`z_k = z_0, z_1, \\dots , z_O` is a grid of :math:`(O+1)` uniformly-spaced
+    points. The input :math:`f_{hijk}` is therefore structured as a :math:`(L+1) \\times (M+1) \\times (N+1) \\times (O+1)` tensor of function values
+    
+    Parameters
+    ----------
+    w : 1d-array[double]
+        A uniformly-spaced grid of points
+    x : 1d-array[double]
+        A uniformly-spaced grid of points
+    y : 1d-array[double]
+        A uniformly-spaced grid of points
+    z : 1d-array[double]
+        A uniformly-spaced grid of points
+    f : 4d-array[double]
+        Function values corresponding to the grid points w, x, y, z or pre-computed spline coefficients
+    bc : str (optional)
+        Boundary value method. Valid options include "natural", "not-a-knot", "clamped", and "E(3)"
+    """
+    def __init__(self, w, x, y, z, f, bc = "E(3)"):
+        self.boundary_conditions_dict = cubic_spline_bc_dict
+        self.available_boundary_conditions = self.boundary_conditions_dict.keys()
+        assert isinstance(w, np.ndarray)
+        assert isinstance(x, np.ndarray)
+        assert isinstance(y, np.ndarray)
+        assert isinstance(z, np.ndarray)
+        assert isinstance(f, np.ndarray)
+        assert ((w.shape[0], x.shape[0], y.shape[0], z.shape[0]) == (f.shape[0], f.shape[1], f.shape[2], f.shape[3]) or (w.shape[0] - 1, x.shape[0] - 1, y.shape[0] - 1, 256*(z.shape[0] - 1)) == (f.shape[0], f.shape[1], f.shape[2], f.shape[3])), "Shapes of arrays {}, {}, {}, {}, and {} do not match".format(w.shape, x.shape, y.shape, z.shape, f.shape)
+
+        self.w0 = w[0]
+        self.x0 = x[0]
+        self.y0 = y[0]
+        self.z0 = z[0]
+
+        self.dw = w[1]-self.w0
+        self.dx = x[1]-self.x0
+        self.dy = y[1]-self.y0
+        self.dz = z[1]-self.z0
+
+        self.nw = w.shape[0] - 1
+        self.nx = x.shape[0] - 1
+        self.ny = y.shape[0] - 1
+        self.nz = z.shape[0] - 1
+
+        dw_array = np.diff(w)
+        dx_array = np.diff(x)
+        dy_array = np.diff(y)
+        dz_array = np.diff(z)
+
+        assert np.allclose(dw_array, self.dw*np.ones(dw_array.shape[0])), "Sampling points in w are not evenly spaced"
+        assert np.allclose(dx_array, self.dx*np.ones(dx_array.shape[0])), "Sampling points in x are not evenly spaced"
+        assert np.allclose(dy_array, self.dy*np.ones(dy_array.shape[0])), "Sampling points in y are not evenly spaced"
+        assert np.allclose(dz_array, self.dz*np.ones(dz_array.shape[0])), "Sampling points in z are not evenly spaced"
+
+        self.check_boundary_conditions(bc)
+        self.base = CyQuadcubicSpline(self.w0, self.dw, self.nw, self.x0, self.dx, self.nx, self.y0, self.dy, self.ny, self.z0, self.dz, self.nz, np.ascontiguousarray(f), self.boundary_conditions_dict[bc])
+
+    def check_boundary_conditions(self, method):
+        if method not in self.available_boundary_conditions:
+            raise ValueError("No available method " + method)
+
+    def eval(self, w, x, y, z):
+        """
+        Evaluates the spline at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w: double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.eval(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.eval(w, x, y, z)
+
+    def deriv_w(self, w, x, y, z):
+        """
+        Evaluates the partial derivative of the spline with respect to w at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_w(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_w(w, x, y, z)
+
+    def deriv_x(self, w, x, y, z):
+        """
+        Evaluates the partial derivative of the spline with respect to x at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_x(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_x(w, x, y, z)
+
+    def deriv_y(self, w, x, y, z):
+        """
+        Evaluates the partial derivative of the spline with respect to y at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_y(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_y(w, x, y, z)
+
+    def deriv_z(self, w, x, y, z):
+        """
+        Evaluates the partial derivative of the spline with respect to z at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_z(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_z(w, x, y, z)
+
+    def deriv_ww(self, w, x, y, z):
+        """
+        Evaluates the second partial derivative of the spline with respect to w at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_ww(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_ww(w, x, y, z)
+
+    def deriv_xx(self, w, x, y, z):
+        """
+        Evaluates the second partial derivative of the spline with respect to x at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_xx(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_xx(w, x, y, z)
+    
+    def deriv_yy(self, w, x, y, z):
+        """
+        Evaluates the second partial derivative of the spline with respect to y at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_yy(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_yy(w, x, y, z)
+
+    def deriv_zz(self, w, x, y, z):
+        """
+        Evaluates the second partial derivative of the spline with respect to z at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_zz(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_zz(w, x, y, z)
+
+    def deriv_wx(self, w, x, y, z):
+        """
+        Evaluates the mixed partial derivative of the spline with respect to w and x at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_wx(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_wx(w, x, y, z)
+
+    def deriv_wy(self, w, x, y, z):
+        """
+        Evaluates the mixed partial derivative of the spline with respect to w and y at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_wy(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_wy(w, x, y, z)
+
+    def deriv_wz(self, w, x, y, z):
+        """
+        Evaluates the mixed partial derivative of the spline with respect to w and z at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_wz(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_wz(w, x, y, z)
+
+    def deriv_xy(self, w, x, y, z):
+        """
+        Evaluates the mixed partial derivative of the spline with respect to x and y at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_xy(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_xy(w, x, y, z)
+    
+    def deriv_xz(self, w, x, y, z):
+        """
+        Evaluates the mixed partial derivative of the spline with respect to x and z at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_xz(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_xz(w, x, y, z)
+    
+    def deriv_yz(self, w, x, y, z):
+        """
+        Evaluates the mixed partial derivative of the spline with respect to y and z at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        if isinstance(w, np.ndarray) or isinstance(x, np.ndarray) or isinstance(y, np.ndarray) or isinstance(z, np.ndarray):
+            b = np.broadcast(w, x, y, z)
+            out = np.empty(b.shape)
+            out.flat = [self.base.deriv_yz(wi, xi, yi, zi) for (wi, xi, yi, zi) in b]
+            return out
+        return self.base.deriv_yz(w, x, y, z)
+
+    def coeff(self, h, i, j, k, mw, mx, my, mz):
+        """
+        Returns the spline coefficients :math:`c_{hijk}^{(mw,m_x,m_y,m_z)}` defined by the
+        spline :math:`f_{hijk}:math:`
+
+        .. math::
+            f_{hijk}(w, x, y, z) = \\sum_{m_w=0}^3\\sum_{m_x=0}^3 \\sum_{m_y=0}^3 \\sum_{m_z=0}^3 c_{hijk}^{(m_w,m_x,m_y,m_z)}(w-w_h)^{m_w}(x-x_i)^{m_x}(y-y_j)^{m_y}(z-z_k)^{m_z}
+
+        Parameters
+        ----------
+        h : int
+            Coefficient for the domain :math:`w_h \\leq w \\leq w_{h+1}`
+        i : int
+            Coefficient for the domain :math:`x_i \\leq x \\leq x_{i+1}`
+        j : int
+            Coefficient for the domain :math:`y_j \\leq y \\leq y_{j+1}`
+        k : int
+            Coefficient for the domain :math:`z_k \\leq z \\leq z_{k+1}`
+        mw : int
+            Coefficient weighting :math:`(w-w_h)^{m_w}` in the spline series
+        mx : int
+            Coefficient weighting :math:`(x-x_i)^{m_x}` in the spline series
+        my : int
+            Coefficient weighting :math:`(y-y_j)^{m_y}` in the spline series
+        mz : int
+            Coefficient weighting :math:`(z-z_k)^{m_z}` in the spline series
+    
+        Returns
+        -------
+        double
+        """
+        return self.base.coefficient(h, i, j, k, mw, mx, my, mz)
+    
+    @property
+    def coefficients(self):
+        """
+        The 4D array of spline coefficients with dimensions :code:`(nw, nx, ny, 256*nz)`.
+        Data are ordered so that the element at index :code:`(i, j, k, 4*(4*(4*(4*k + mw) + mx) + my) + mz)`
+        returns the same value as :code:`coeffs(h, i, j, k, mw, mx, my, mz)`
+
+        Returns
+        -------
+        4d-array[double]
+        """
+        return self.base.coefficients()
+
+    def to_numba(self):
+        """
+        Returns a numba ``jitclass`` view of this spline that can be constructed
+        and evaluated from within ``@njit``-compiled functions.
+
+        The returned object exposes ``eval`` and the ``deriv_*`` methods matching
+        this class. The spline coefficients are computed once here (by the C++
+        backend); only the evaluation runs under numba.
+
+        Returns
+        -------
+        multispline.numba.QuadcubicSplineNumba
+
+        Notes
+        -----
+        Requires the optional ``numba`` dependency
+        (``pip install multispline[numba]``).
+        """
+        from .numba import QuadcubicSplineNumba
+        c = np.ascontiguousarray(self.coefficients, dtype=np.float64).reshape(
+            self.nw, self.nx, self.ny, self.nz, 4, 4, 4, 4)
+        return QuadcubicSplineNumba(c, float(self.w0), float(self.dw), int(self.nw),
+                                    float(self.x0), float(self.dx), int(self.nx),
+                                    float(self.y0), float(self.dy), int(self.ny),
+                                    float(self.z0), float(self.dz), int(self.nz))
+
+    def __call__(self, w, x, y, z):
+        """
+        Evaluates the spline at the point (w, x, y, z)
+
+        Parameters
+        ----------
+        w : double
+            dependent parameter
+        x : double
+            dependent parameter
+        y : double
+            dependent parameter
+        z : double
+            dependent parameter
+
+        Returns
+        -------
+        double
+        """
+        return self.eval(w, x, y, z)

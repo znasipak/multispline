@@ -404,6 +404,48 @@ One can also evaluate up to two partial derivatives of the spline via the class 
 
 Lastly, one can access spline coefficients through the class property `coefficients` or method `coeff`
 
+# Using splines inside Numba
+
+The spline classes are backed by a compiled C++ object, so they cannot be called
+directly from within a `numba.njit`-compiled function. However, once a spline has
+been built, *evaluating* it is just an interval lookup followed by a polynomial
+evaluation, which Numba compiles efficiently.
+
+Every spline class provides a `to_numba()` method that returns a Numba `jitclass`
+view of the spline. Build the spline as usual (the coefficients are computed once
+by the C++ backend), then use the returned object — including its `eval` and
+`deriv_*` methods — inside your own `@njit` functions:
+
+```python
+import numpy as np
+from numba import njit
+from multispline.spline import TricubicSpline
+
+x = np.linspace(0, 1, 21)
+y = np.linspace(0, 1, 21)
+z = np.linspace(0, 1, 21)
+f = np.einsum("i,j,k->ijk", np.sin(x), np.cos(y), np.exp(z))
+
+spline = TricubicSpline(x, y, z, f)
+nspline = spline.to_numba()        # build once, outside njit
+
+@njit
+def average_over(nspline, pts):
+    total = 0.0
+    for n in range(pts.shape[0]):
+        total += nspline.eval(pts[n, 0], pts[n, 1], pts[n, 2])
+    return total / pts.shape[0]
+
+pts = np.random.rand(1000, 3)
+average_over(nspline, pts)
+```
+
+Lower-level stand-alone `@njit` kernels (`cubic_eval_d`, `bicubic_eval_d`,
+`tricubic_eval_d`, `quadcubic_eval_d`, and convenience wrappers) are available in
+`multispline.numba` if you prefer to pass the coefficient arrays explicitly.
+
+Numba is an optional dependency; install it with `pip install multispline[numba]`.
+
 # Contributing
 Zachary Nasipak
 

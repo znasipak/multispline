@@ -27,8 +27,8 @@ jobs:
         run: |
           python -m venv venv
           source venv/bin/activate
-          python -m pip install .
-          python -m unittest discover      
+          python -m pip install '.[test]'
+          python -m pytest multispline/tests
 
   build_wheels:
     needs: build_and_run_tests
