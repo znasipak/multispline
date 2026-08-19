@@ -17,8 +17,8 @@ jobs:
         shell: bash -el {0}
     strategy:
       matrix:
-        # macos-13 is an intel runner, macos-14 is apple silicon
-        os: [ubuntu-latest, macos-13, macos-14]
+        # macos-14 and macos-15 are apple silicon runners
+        os: [ubuntu-latest, macos-14, macos-15]
   
     steps:
       - uses: actions/checkout@v4
