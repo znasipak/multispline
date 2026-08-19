@@ -39,8 +39,8 @@ dev = [
 ]
 
 [tool.cibuildwheel]
-# Disable PyPy wheels everywhere; skip CPython 3.15 until Cython ships stable 3.15 wheels
-skip = "pp* cp315-*"
+# Skip CPython 3.15 until Cython ships stable 3.15 wheels
+skip = "cp315-*"
 
 [tool.scikit-build]
 sdist.include = [ "cpp/", 'cython/' ]
