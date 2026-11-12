@@ -5,7 +5,7 @@ requires = [ "cython", "numpy", "scikit-build-core" ]
 
 [project]
 name = "multispline"
-version = "0.9.0"
+version = "0.9.1"
 authors = [
 	{name = "Zach Nasipak"}
 ]
@@ -40,7 +40,7 @@ dev = [
 
 [tool.cibuildwheel]
 # Skip CPython 3.15 until Cython ships stable 3.15 wheels
-skip = "cp315-*"
+skip = "cp315*"
 
 [tool.scikit-build]
 sdist.include = [ "cpp/", 'cython/' ]

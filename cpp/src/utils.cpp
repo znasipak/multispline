@@ -381,17 +381,17 @@ Matrix FourTensor::slice_yz(size_t k, size_t l){
 }
 
 Matrix FourTensor::slice(size_t d1, size_t d2, size_t i1, size_t i2){
-	if(d1 == 0 and d2 == 1){
+	if(d1 == 0 && d2 == 1){
 		return slice_wx(i1, i2);
-	}else if(d1 == 0 and d2 == 2){
+	}else if(d1 == 0 && d2 == 2){
 		return slice_wy(i1, i2);
-	}else if(d1 == 0 and d2 == 3){
+	}else if(d1 == 0 && d2 == 3){
 		return slice_wz(i1, i2);
-	}else if(d1 == 1 and d2 == 2){
+	}else if(d1 == 1 && d2 == 2){
 		return slice_xy(i1, i2);
-	}else if(d1 == 1 and d2 == 3){
+	}else if(d1 == 1 && d2 == 3){
 		return slice_xz(i1, i2);
-	}else if(d1 == 2 and d2 == 3){
+	}else if(d1 == 2 && d2 == 3){
 		return slice_yz(i1, i2);
 	}else{
 		std::cout << "ERROR: Invalid dimension \n";
@@ -432,13 +432,13 @@ Vector FourTensor::slice_xyz(size_t j, size_t k, size_t l){
 }
 
 Vector FourTensor::slice(size_t d1, size_t d2, size_t d3, size_t i1, size_t i2, size_t i3){
-	if(d1 == 0 and d2 == 1 and d3 == 2){
+	if(d1 == 0 && d2 == 1 && d3 == 2){
 		return slice_wxy(i1, i2, i3);
-	}else if(d1 == 0 and d2 == 1 and d3 == 3){
+	}else if(d1 == 0 && d2 == 1 && d3 == 3){
 		return slice_wxz(i1, i2, i3);
-	}else if(d1 == 0 and d2 == 2 and d3 == 3){
+	}else if(d1 == 0 && d2 == 2 && d3 == 3){
 		return slice_wyz(i1, i2, i3);
-	}else if(d1 == 1 and d2 == 2 and d3 == 3){
+	}else if(d1 == 1 && d2 == 2 && d3 == 3){
 		return slice_xyz(i1, i2, i3);
 	}else{
 		std::cout << "ERROR: Invalid dimensions \n";
